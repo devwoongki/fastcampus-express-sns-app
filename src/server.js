@@ -15,6 +15,7 @@ const likeRouter = require('./routers/likes.router');
 const friendsRouter = require('./routers/friends.router');
 const serverConfig = config.get('server');
 const passport = require('passport');
+const flash = require('connect-flash');
 
 const port = serverConfig.port;
 
@@ -50,7 +51,7 @@ require('./config/passport');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
+app.use(flash());
 //view engine config
 
 app.set('views', path.join(__dirname,'views'));
@@ -69,6 +70,23 @@ mongoose.connect(process.env.MONGO_URI)
 
 app.use(express.static(path.join(__dirname,'public')));
 
+app.get('/send', (req, res) => {
+    req.flash('post success', '포스트가 생성되었습니다.');
+    res.redirect('/receive')
+})
+
+app.get('/receive', (req, res) => {
+    res.send(req.flash('post success')[0]);
+})
+
+
+app.use((req, res, next) => {
+    res.locals.error = req.flash('error');
+    res.locals.success = req.flash('success');
+    res.locals.currentUser = req.user;
+    next();
+})
+
 
 app.use('/', mainRouter);
 app.use('/auth',usersRouter);
@@ -78,6 +96,10 @@ app.use('/profile/:id',profileRouter);
 app.use('/friends',friendsRouter);
 app.use('/posts/:id/like',likeRouter);
 
+app.use((err, req, res, next) => {
+    res.status(err.status || 500);
+    res.send(err.message || "err occured");
+})
 
 app.listen(port, () => { 
     console.log(`Server running on port ${port}`);
