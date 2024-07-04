@@ -1,34 +1,34 @@
-const express = require('express');
-const path = require('path');
-const {default : mongoose} = require('mongoose');
-const User = require('./models/users.model');
 const cookieSession = require('cookie-session');
-
+const express = require('express');
+const { default: mongoose } = require('mongoose');
+const passport = require('passport');
+const app = express();
+const path = require('path');
+const flash = require('connect-flash');
+const methodOverride = require('method-override');
 
 const config = require('config');
-const mainRouter = require('./routers/main.router');
-const usersRouter = require('./routers/users.router');
-const postsRouter = require('./routers/posts.router');
-const commentsRouter = require('./routers/comments.router');
-const profileRouter = require('./routers/profile.router');
-const likeRouter = require('./routers/likes.router');
-const friendsRouter = require('./routers/friends.router');
+const mainRouter = require('./routes/main.router');
+const usersRouter = require('./routes/users.router');
+const postsRouter = require('./routes/posts.router');
+const commentsRouter = require('./routes/comments.router');
+const profileRouter = require('./routes/profile.router');
+const likeRouter = require('./routes/likes.router');
+const friendsRouter = require('./routes/friends.router');
+
+
 const serverConfig = config.get('server');
-const passport = require('passport');
-const flash = require('connect-flash');
+
 
 const port = serverConfig.port;
 
-require('dotenv').config();
 
-
-const app = express();
+require('dotenv').config()
 
 app.use(cookieSession({
     name: 'cookie-session-name',
     keys: [process.env.COOKIE_ENCRYPTION_KEY]
-}));
-
+}))
 
 // register regenerate & save after the cookieSession middleware initialization
 app.use(function (request, response, next) {
@@ -51,24 +51,24 @@ require('./config/passport');
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
 app.use(flash());
-//view engine config
-
-app.set('views', path.join(__dirname,'views'));
+app.use(methodOverride('_method'));
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-
-
 
 mongoose.set('strictQuery', false);
 mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-    console.log('Connected to MongoDB')
-})
-.catch((err) => {
-    console.log(err);
-});
+    .then(() => {
+        console.log('mongodb connected')
+    })
+    .catch((err) => {
+        console.log(err);
+    })
 
-app.use(express.static(path.join(__dirname,'public')));
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 app.get('/send', (req, res) => {
     req.flash('post success', '포스트가 생성되었습니다.');
@@ -79,7 +79,6 @@ app.get('/receive', (req, res) => {
     res.send(req.flash('post success')[0]);
 })
 
-
 app.use((req, res, next) => {
     res.locals.error = req.flash('error');
     res.locals.success = req.flash('success');
@@ -87,21 +86,19 @@ app.use((req, res, next) => {
     next();
 })
 
-
 app.use('/', mainRouter);
-app.use('/auth',usersRouter);
-app.use('/posts',postsRouter);
-app.use('/posts/:id/comments',commentsRouter);
-app.use('/profile/:id',profileRouter);
-app.use('/friends',friendsRouter);
-app.use('/posts/:id/like',likeRouter);
+app.use('/auth', usersRouter);
+app.use('/posts', postsRouter);
+app.use('/posts/:id/comments', commentsRouter);
+app.use('/profile/:id', profileRouter);
+app.use('/friends', friendsRouter);
+app.use(likeRouter);
 
 app.use((err, req, res, next) => {
     res.status(err.status || 500);
-    res.send(err.message || "err occured");
+    res.send(err.message || "Error Occurred");
 })
 
-app.listen(port, () => { 
-    console.log(`Server running on port ${port}`);
-});
-
+app.listen(port, () => {
+    console.log(`Listening on ${port}`);
+})
