@@ -28,6 +28,22 @@ router.get('/', checkAuthenticated, (req, res) => {
            
 })
 
+router.get('/edit', checkIsMe, (req, res) => {
+    res.render('profile/edit', {
+        user: req.user
+    })
+})
+
+
+router.put('/', checkIsMe, (req, res) => {
+    User.findByIdAndUpdate(req.params.id, req.body).then( () => {
+        req.flash('success', '유저 데이터를 업데이트하는데 성공했습니다.');
+        res.redirect('/profile/' + req.params.id);
+    }).catch(err => {
+        req.flash('error', '유저 데이터를 업데이트하는데 에러가 났습니다.');
+        res.redirect('back');
+    });
+})
 
 
 
