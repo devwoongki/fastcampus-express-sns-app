@@ -1,5 +1,6 @@
 const express = require('express');
 const {checkAuthenticated} = require('../middleware/auth');
+const {checkPostOwnerShip} = require('../middleware/auth');
 const Post = require('../models/posts.model');
 const router = express.Router();
 const Comment = require('../models/comments.model');
@@ -51,6 +52,34 @@ router.get('/', checkAuthenticated, (req, res) => {
         console.log(err);
     })
 });
+
+
+router.get('/:id/edit', checkPostOwnerShip, (req, res) => {
+    res.render('posts/edit', {
+        post : req.post
+    })
+})
+
+router.put('/:id', checkPostOwnerShip, (req, res) => {
+    Post.findByIdAndUpdate( req.params.id, req.body).then(post => {
+        req.flash('success', '게시물이 수정되었습니다.');
+        res.redirect('/posts');
+    }).catch(err =>{
+        req.flash('error', '게시물을 수정 중 오류가 발생했습니다');
+        res.redirect('/posts');
+    });
+});
+
+router.delete('/:id', checkPostOwnerShip, (req, res) => {
+    Post.findByIdAndDelete( req.params.id, req.body).then(post => {
+        req.flash('success', '게시물이 삭제되었습니다.');
+        res.redirect('/posts');
+    }).catch(err =>{
+        req.flash('error', '게시물을 삭제 중 오류가 발생했습니다');
+        res.redirect('/posts');
+    });
+});
+
 
 
 module.exports = router;
